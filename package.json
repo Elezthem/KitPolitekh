@@ -1,0 +1,12 @@
+{
+  "name": "kitsite-politekh",
+  "version": "1.0.0",
+  "description": "Adaptive faculty promo site with live wishes board",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

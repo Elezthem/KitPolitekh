@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" role="img" aria-label="Логотип факультету">
+  <path d="M78 30c-40 24-64 76-55 134 3 19 9 36 17 53-5-36 2-75 21-107 17-29 44-52 75-64-22-17-37-22-58-16z" fill="#2f4dac"/>
+  <path d="M208 48c-44 0-86 17-116 48 43-14 92-9 133 15 18 10 34 23 46 38-3-20-10-39-22-56-10-15-24-27-41-35z" fill="#2ab61b"/>
+  <path d="M63 201c13 28 38 50 69 60 38 12 82 5 116-18-35 4-71-2-102-19-22-12-40-30-53-50-17 11-27 18-30 27z" fill="#f48a00"/>
+  <path d="M239 133c7 27 6 56-4 83-11 32-33 57-61 73 37-2 72-18 96-47 20-25 31-57 28-90-23-9-36-14-59-19z" fill="#ef3114"/>
+  <circle cx="150" cy="150" r="66" fill="#3c57b4"/>
+  <ellipse cx="150" cy="150" rx="48" ry="18" transform="rotate(-28 150 150)" fill="none" stroke="#fff" stroke-width="8"/>
+  <ellipse cx="150" cy="150" rx="48" ry="18" transform="rotate(28 150 150)" fill="none" stroke="#fff" stroke-width="8"/>
+  <ellipse cx="150" cy="150" rx="20" ry="52" fill="none" stroke="#fff" stroke-width="8"/>
+  <circle cx="150" cy="150" r="7" fill="#fff"/>
+</svg>

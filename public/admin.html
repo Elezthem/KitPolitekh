@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin | База учасників</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="admin-body">
+    <main class="admin-shell">
+      <section class="admin-card">
+        <h1>База учасників</h1>
+        <p>Ця сторінка доступна лише розробникам через basic auth.</p>
+        <div class="admin-stats" id="admin-stats"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>Ім'я</th>
+                <th>Телефон</th>
+                <th>Telegram</th>
+                <th>Побажання</th>
+              </tr>
+            </thead>
+            <tbody id="admin-table"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <script src="/admin.js"></script>
+  </body>
+  </html>

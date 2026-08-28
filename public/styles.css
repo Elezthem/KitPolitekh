@@ -1,0 +1,787 @@
+:root {
+  --bg: #f7f7f2;
+  --surface: #ffffff;
+  --text: #1f2933;
+  --muted: #677484;
+  --accent: #2153d7;
+  --shadow: 0 24px 80px rgba(31, 41, 51, 0.12);
+  --radius: 28px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top, rgba(33, 83, 215, 0.08), transparent 36%),
+    linear-gradient(180deg, #ffffff, var(--bg));
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.screen {
+  display: none;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 24px;
+}
+
+.screen.is-active {
+  display: grid;
+}
+
+.screen-intro,
+.screen-showcase {
+  place-items: center;
+}
+
+.hero-card,
+.form-card,
+.admin-card {
+  width: min(100%, 560px);
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: clamp(24px, 4vw, 40px);
+}
+
+.hero-card--white {
+  min-height: min(88vh, 980px);
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 32px;
+  background: #fff;
+}
+
+.logo-wrap {
+  width: min(78vw, 340px);
+}
+
+.faculty-logo {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+.faculty-logo--bitmap {
+  filter: contrast(1.02) saturate(1.02);
+}
+
+.form-card {
+  margin: auto;
+  display: grid;
+  gap: 18px;
+}
+
+.form-card h1,
+.admin-card h1,
+.qr-panel h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 2.7rem);
+}
+
+.form-card p,
+.admin-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+}
+
+input,
+textarea {
+  width: 100%;
+  border: 1px solid rgba(31, 41, 51, 0.15);
+  border-radius: 18px;
+  padding: 16px 18px;
+  font: inherit;
+  resize: vertical;
+  background: #fff;
+}
+
+input:focus,
+textarea:focus {
+  outline: 3px solid rgba(33, 83, 215, 0.18);
+  border-color: var(--accent);
+}
+
+.primary-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 18px 28px;
+  font: inherit;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #3ea1ff);
+  cursor: pointer;
+  box-shadow: 0 14px 30px rgba(33, 83, 215, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.primary-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(33, 83, 215, 0.32);
+}
+
+.ghost-button {
+  border: 1px solid rgba(31, 41, 51, 0.12);
+  border-radius: 999px;
+  padding: 12px 18px;
+  font: inherit;
+  font-weight: 700;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  justify-self: start;
+}
+
+.status-line {
+  min-height: 24px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.screen-showcase {
+  background:
+    radial-gradient(circle at center, rgba(42, 182, 27, 0.12), transparent 30%),
+    linear-gradient(180deg, #ffffff, #f5f8ff 72%, #f0f5ea);
+}
+
+.showcase-grid {
+  width: 100%;
+  min-height: calc(100vh - 48px);
+  min-height: calc(100svh - 48px);
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) 1fr minmax(200px, 260px);
+  gap: 22px;
+  align-items: center;
+}
+
+.qr-panel {
+  border-radius: 30px;
+  padding: 24px;
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+}
+
+.qr-panel--instagram {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 243, 249, 0.97)),
+    linear-gradient(135deg, #f58529, #feda77, #dd2a7b, #8134af, #515bd4);
+}
+
+.qr-panel--tiktok {
+  background: linear-gradient(180deg, rgba(12, 12, 16, 0.96), rgba(28, 28, 34, 0.98));
+  color: #fff;
+}
+
+.qr-panel a {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.qr-panel--tiktok h2,
+.qr-panel--tiktok a {
+  color: #fff;
+}
+
+.qr-box {
+  width: 100%;
+  max-width: 180px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border-radius: 22px;
+  padding: 12px;
+}
+
+.qr-panel--instagram .qr-box {
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.92), 0 16px 30px rgba(221, 42, 123, 0.22);
+}
+
+.qr-panel--tiktok .qr-box {
+  box-shadow: 10px 10px 0 rgba(37, 244, 238, 0.22), -10px -10px 0 rgba(254, 44, 85, 0.22);
+}
+
+.cat-stage {
+  position: relative;
+  min-height: 80vh;
+  min-height: 80svh;
+  display: grid;
+  place-items: center;
+}
+
+.showcase-back {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 10;
+}
+
+.cat-scene {
+  width: min(100%, 980px);
+  min-height: 82vh;
+  min-height: 82svh;
+  display: grid;
+  place-items: center;
+}
+
+.cat-card {
+  position: relative;
+  width: min(82vw, 760px);
+  aspect-ratio: 1 / 1.05;
+  display: grid;
+  place-items: center;
+  animation: catCardFloat 4.2s ease-in-out infinite;
+}
+
+.cat-image {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 760px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.18));
+}
+
+.wish-board {
+  position: absolute;
+  left: 50%;
+  bottom: 20.8%;
+  transform: translateX(-50%);
+  width: min(24vw, 244px);
+  min-height: 132px;
+  z-index: 4;
+  padding: 4px 6px 6px;
+}
+
+.wish-board--embedded::before {
+  display: none;
+}
+
+.board-copy {
+  position: absolute;
+  inset: 3px 5px 5px;
+  display: grid;
+  gap: 3px;
+  color: #5b3414;
+  text-align: left;
+}
+
+.board-title {
+  margin: 0;
+  font-weight: 800;
+  font-size: clamp(0.78rem, 0.9vw, 0.9rem);
+  text-align: center;
+}
+
+.board-title--empty {
+  opacity: 0.45;
+}
+
+.wish-flyzone {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.wish-chip {
+  position: absolute;
+  left: 50%;
+  top: 7%;
+  transform: translate(-50%, 0) scale(0.8);
+  max-width: min(50vw, 300px);
+  background: #fff8d8;
+  color: #263238;
+  border-radius: 18px;
+  padding: 12px 14px;
+  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.12);
+  animation: flyToBoard 2.4s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  text-align: center;
+  font-weight: 700;
+}
+
+.wish-cloud {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.wish-note {
+  position: absolute;
+  max-width: 180px;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #7b4b17;
+  box-shadow: 0 16px 30px rgba(255, 161, 28, 0.18);
+  border: 2px solid rgba(255, 153, 0, 0.35);
+  backdrop-filter: blur(6px);
+  transform: rotate(-4deg);
+  animation: noteFloat 6s ease-in-out infinite;
+}
+
+.wish-note:nth-child(even) {
+  transform: rotate(3deg);
+}
+
+.wish-note strong {
+  font-size: 0.92rem;
+}
+
+.wish-note span {
+  font-size: 0.84rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.wish-note--new {
+  animation: noteArrive 0.9s ease, noteFloat 6s ease-in-out 1s infinite;
+  box-shadow: 0 20px 40px rgba(255, 145, 0, 0.28);
+}
+
+.admin-body {
+  background: linear-gradient(180deg, #f7fbff, #eef4ea);
+}
+
+.admin-shell {
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 24px;
+  display: grid;
+  place-items: center;
+}
+
+.admin-card {
+  width: min(100%, 1200px);
+}
+
+.admin-stats {
+  margin: 16px 0 20px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.table-wrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 14px 12px;
+  border-bottom: 1px solid rgba(31, 41, 51, 0.1);
+  text-align: left;
+  vertical-align: top;
+}
+
+thead {
+  background: rgba(33, 83, 215, 0.07);
+}
+
+@keyframes catCardFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(-0.8deg);
+  }
+}
+
+@keyframes flyToBoard {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -36px) scale(0.84);
+  }
+  18% {
+    opacity: 1;
+  }
+  74% {
+    opacity: 1;
+    transform: translate(-4%, 214px) scale(0.94);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, 242px) scale(0.82);
+  }
+}
+
+@keyframes noteArrive {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.86) rotate(-8deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.03) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(-3deg);
+  }
+}
+
+@keyframes noteFloat {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -10px;
+  }
+}
+
+@media (max-width: 900px) {
+  .showcase-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "stage"
+      "instagram"
+      "tiktok";
+    align-items: stretch;
+  }
+
+  .qr-panel {
+    max-width: 340px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .qr-panel:first-child {
+    grid-area: instagram;
+  }
+
+  .qr-panel:last-child {
+    grid-area: tiktok;
+  }
+
+  .cat-stage {
+    grid-area: stage;
+    min-height: 58vh;
+    min-height: 58svh;
+  }
+
+  .cat-card {
+    width: min(88vw, 460px);
+  }
+
+  .wish-board {
+    bottom: 20%;
+    width: min(35vw, 146px);
+    min-height: 82px;
+    padding: 3px 4px 4px;
+  }
+
+  .board-copy {
+    inset: 2px 3px 3px;
+    gap: 2px;
+  }
+
+  .board-title {
+    font-size: 0.48rem;
+  }
+
+  .wish-note {
+    max-width: 104px;
+    padding: 6px 7px;
+    border-radius: 12px;
+  }
+
+  .wish-note strong {
+    font-size: 0.48rem;
+  }
+
+  .wish-note span {
+    font-size: 0.42rem;
+  }
+
+  .screen {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .screen {
+    padding: 12px;
+  }
+
+  .hero-card,
+  .form-card,
+  .admin-card {
+    width: 100%;
+    border-radius: 22px;
+    padding: 20px 16px;
+  }
+
+  .hero-card--white {
+    min-height: min(100svh - 24px, 760px);
+    gap: 24px;
+  }
+
+  .logo-wrap {
+    width: min(86vw, 300px);
+  }
+
+  .form-card {
+    gap: 14px;
+  }
+
+  .form-card h1,
+  .admin-card h1,
+  .qr-panel h2 {
+    font-size: clamp(1.5rem, 7vw, 2rem);
+  }
+
+  .form-card p,
+  .admin-card p,
+  label,
+  input,
+  textarea,
+  .primary-button,
+  .ghost-button,
+  .status-line {
+    font-size: 0.98rem;
+  }
+
+  input,
+  textarea {
+    border-radius: 16px;
+    padding: 14px 16px;
+  }
+
+  .primary-button,
+  .ghost-button {
+    width: 100%;
+    justify-self: stretch;
+    text-align: center;
+  }
+
+  .showcase-grid {
+    min-height: auto;
+    gap: 16px;
+  }
+
+  .qr-panel {
+    padding: 18px 16px;
+    border-radius: 24px;
+  }
+
+  .qr-box {
+    max-width: 150px;
+    border-radius: 18px;
+  }
+
+  .showcase-back {
+    position: static;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .cat-stage {
+    min-height: auto;
+    gap: 10px;
+    padding-top: 4px;
+  }
+
+  .cat-scene {
+    width: 100%;
+    min-height: auto;
+  }
+
+  .cat-card {
+    width: min(100%, 420px);
+  }
+
+  .wish-board {
+    bottom: 20.5%;
+    width: min(32vw, 138px);
+    min-height: 78px;
+  }
+
+  .board-title {
+    font-size: clamp(0.43rem, 1.8vw, 0.55rem);
+  }
+
+  .wish-chip {
+    top: 3%;
+    max-width: min(76vw, 260px);
+    padding: 10px 12px;
+    font-size: 0.88rem;
+  }
+
+  .wish-cloud {
+    display: none;
+  }
+
+  .admin-shell {
+    padding: 12px;
+  }
+
+  th,
+  td {
+    padding: 10px 8px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (min-width: 1600px) {
+  .hero-card,
+  .form-card {
+    width: min(46vw, 760px);
+  }
+
+  .primary-button {
+    font-size: 1.25rem;
+    padding: 22px 34px;
+  }
+
+  input,
+  textarea {
+    font-size: 1.2rem;
+    padding: 20px 22px;
+  }
+
+  .wish-board {
+    width: min(20vw, 280px);
+    min-height: 146px;
+  }
+
+  .wish-note {
+    max-width: 190px;
+  }
+
+  .wish-note strong {
+    font-size: 0.8rem;
+  }
+
+  .wish-note span {
+    font-size: 0.72rem;
+  }
+}
+
+@media (min-width: 2200px) {
+  :root {
+    --radius: 40px;
+    --shadow: 0 34px 110px rgba(31, 41, 51, 0.16);
+  }
+
+  body {
+    font-size: 1.25rem;
+  }
+
+  .screen {
+    padding: 40px;
+  }
+
+  .hero-card,
+  .form-card {
+    width: min(42vw, 920px);
+    padding: 42px 46px;
+  }
+
+  .hero-card--white {
+    min-height: min(84vh, 1200px);
+    gap: 40px;
+  }
+
+  .logo-wrap {
+    width: min(42vw, 520px);
+  }
+
+  .showcase-grid {
+    grid-template-columns: minmax(300px, 420px) 1fr minmax(300px, 420px);
+    gap: 40px;
+  }
+
+  .qr-panel {
+    padding: 34px 28px;
+    border-radius: 36px;
+  }
+
+  .qr-box {
+    max-width: 280px;
+    padding: 18px;
+  }
+
+  .cat-scene {
+    width: min(100%, 1380px);
+  }
+
+  .cat-card {
+    width: min(60vw, 1080px);
+  }
+
+  .wish-board {
+    width: min(16vw, 360px);
+    min-height: 188px;
+  }
+
+  .board-title {
+    font-size: clamp(1rem, 1vw, 1.2rem);
+  }
+
+  .wish-note {
+    max-width: 260px;
+    padding: 14px 16px;
+  }
+
+  .wish-note strong {
+    font-size: 1rem;
+  }
+
+  .wish-note span {
+    font-size: 0.92rem;
+    line-height: 1.35;
+  }
+
+  .wish-chip {
+    max-width: min(26vw, 420px);
+    padding: 16px 20px;
+    font-size: 1rem;
+  }
+
+  .admin-card {
+    width: min(94vw, 1600px);
+    padding: 40px;
+  }
+
+  th,
+  td {
+    padding: 18px 16px;
+  }
+}
