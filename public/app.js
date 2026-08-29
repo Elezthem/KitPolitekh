@@ -25,8 +25,7 @@ const socials = {
 const validators = {
   phone: /^\+380\d{9}$/,
   name: /^[A-Za-zА-Яа-яІіЇїЄєҐґ' -]{2,30}$/,
-  telegram: /^@?[A-Za-z0-9_]{5,32}$/,
-  wish: /^.{2,50}$/
+  telegram: /^@?[A-Za-z0-9_]{5,32}$/
 };
 
 function showScreen(name, options = {}) {
@@ -104,8 +103,12 @@ function validateContactForm(payload) {
 }
 
 function validateWish(wish) {
-  if (!validators.wish.test(wish)) {
-    return "Побажання має бути від 2 до 50 символів.";
+  const words = wish.split(/\s+/).filter(Boolean);
+  if (wish.length < 2) {
+    return "Побажання має бути не коротшим за 2 символи.";
+  }
+  if (words.length > 255) {
+    return "Побажання має містити не більше 255 слів.";
   }
   return "";
 }

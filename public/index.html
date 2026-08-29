@@ -24,7 +24,7 @@
           <p>Введіть номер телефону, ім'я та Telegram username, щоб ми могли зв'язатися з переможцем.</p>
           <label>
             <span>Номер телефона</span>
-            <input type="tel" name="phone" placeholder="+380991112233" inputmode="tel" pattern="^\+380\d{9}$" maxlength="13" required />
+            <input type="tel" name="phone" value="+380" placeholder="+380991112233" inputmode="tel" pattern="^\+380\d{9}$" maxlength="13" required />
           </label>
           <label>
             <span>Ім'я</span>
@@ -32,7 +32,7 @@
           </label>
           <label>
             <span>Юзернейм Telegram</span>
-            <input type="text" name="telegram" placeholder="@username" pattern="^@?[A-Za-z0-9_]{5,32}$" minlength="5" maxlength="33" required />
+            <input type="text" name="telegram" value="@" placeholder="@username" pattern="^@?[A-Za-z0-9_]{5,32}$" minlength="5" maxlength="33" required />
           </label>
           <button type="submit" class="primary-button">Далі</button>
         </form>
@@ -45,7 +45,7 @@
           <p>Напишіть тепле побажання для факультету. Воно в реальному часі прилетить на табличку, яку тримає котик.</p>
           <label>
             <span>Ваше побажання</span>
-            <textarea name="wish" rows="4" maxlength="50" minlength="2" placeholder="Бажаю факультету..." required></textarea>
+            <textarea name="wish" rows="4" maxlength="2000" minlength="2" placeholder="Бажаю факультету..." required></textarea>
           </label>
           <div class="status-line" id="form-status" aria-live="polite"></div>
           <button type="submit" class="primary-button">Відправити</button>

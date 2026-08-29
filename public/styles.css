@@ -221,6 +221,10 @@ textarea:focus {
   color: #fff;
 }
 
+.qr-panel--tiktok .social-link {
+  color: #121216;
+}
+
 .qr-box {
   width: 100%;
   max-width: 180px;
