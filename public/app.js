@@ -70,8 +70,8 @@ function escapeHtml(text) {
 }
 
 function renderQr(target, url) {
-  const api = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
-  target.innerHTML = `<img src="${api}" alt="QR code" width="180" height="180" />`;
+  const api = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&qzone=2&data=${encodeURIComponent(url)}`;
+  target.innerHTML = `<img class="qr-image" src="${api}" alt="QR code" width="200" height="200" loading="eager" decoding="sync" />`;
 }
 
 const cloudSlots = [
