@@ -313,39 +313,13 @@ textarea:focus {
   width: min(24vw, 244px);
   min-height: 132px;
   z-index: 4;
+  display: grid;
+  place-items: center;
   padding: 4px 6px 6px;
 }
 
-.wish-board--embedded::before {
-  display: none;
-}
-
-.board-copy {
-  position: absolute;
-  inset: 3px 5px 5px;
-  display: grid;
-  place-items: center;
-  justify-items: center;
-  gap: 0;
-  color: #4a2408;
-  text-align: center;
-}
-
-.board-qr-link {
-  display: grid;
-  gap: 0;
-  color: #ffffff;
-  text-decoration: none;
-  justify-items: center;
-}
-
-.board-qr-link--single {
-  justify-self: center;
-  width: min(100%, 118px);
-}
-
 .board-qr-box {
-  width: 100%;
+  width: min(100%, 118px);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -582,14 +556,6 @@ thead {
     padding: 4px 5px 4px;
   }
 
-  .board-copy {
-    inset: 3px 4px 3px;
-  }
-
-  .board-qr-link {
-    width: 100%;
-  }
-
   .board-qr-box {
     width: min(100%, 58px);
     border-radius: 6px;
@@ -719,14 +685,6 @@ thead {
     width: min(38vw, 148px);
     min-height: 88px;
     padding: 4px 4px 4px;
-  }
-
-  .board-copy {
-    inset: 3px 4px 3px;
-  }
-
-  .board-qr-link {
-    width: 100%;
   }
 
   .board-qr-box {
