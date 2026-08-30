@@ -320,9 +320,12 @@ textarea:focus {
   position: absolute;
   inset: 3px 5px 5px;
   display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-content: start;
+  justify-items: center;
   gap: 6px;
   color: #4a2408;
-  text-align: left;
+  text-align: center;
 }
 
 .board-title {
@@ -340,6 +343,7 @@ textarea:focus {
 
 .board-qr-link {
   display: grid;
+  grid-template-rows: auto auto;
   gap: 4px;
   color: #ffffff;
   text-decoration: none;
@@ -587,30 +591,32 @@ thead {
 
   .wish-board {
     bottom: 19.6%;
-    width: min(38vw, 164px);
-    min-height: 96px;
-    padding: 4px 5px 5px;
+    width: min(38vw, 156px);
+    min-height: 92px;
+    padding: 4px 5px 4px;
   }
 
   .board-copy {
-    inset: 4px 5px 4px;
-    gap: 4px;
+    inset: 3px 4px 3px;
+    gap: 2px;
   }
 
   .board-title {
-    font-size: 0.54rem;
-    line-height: 1.05;
+    max-width: 100px;
+    font-size: 0.47rem;
+    line-height: 1;
   }
 
   .board-qr-link {
-    font-size: 0.5rem;
-    gap: 3px;
+    width: 100%;
+    font-size: 0.42rem;
+    gap: 2px;
   }
 
   .board-qr-box {
-    width: min(100%, 68px);
-    border-radius: 7px;
-    padding: 3px;
+    width: min(100%, 58px);
+    border-radius: 6px;
+    padding: 2px;
   }
 
   .wish-note {
@@ -733,29 +739,37 @@ thead {
 
   .wish-board {
     bottom: 19.8%;
-    width: min(40vw, 158px);
-    min-height: 98px;
-    padding: 4px 5px 5px;
+    width: min(38vw, 148px);
+    min-height: 88px;
+    padding: 4px 4px 4px;
+  }
+
+  .board-copy {
+    inset: 3px 4px 3px;
+    gap: 2px;
   }
 
   .board-title {
-    font-size: clamp(0.52rem, 2vw, 0.64rem);
-    line-height: 1.08;
+    max-width: 92px;
+    font-size: clamp(0.42rem, 1.7vw, 0.5rem);
+    line-height: 0.98;
     color: rgba(26, 22, 16, 0.85);
     text-shadow: 0 1px 3px rgba(255, 255, 255, 0.4);
   }
 
   .board-qr-link {
-    font-size: 0.5rem;
-    gap: 4px;
+    width: 100%;
+    font-size: 0.38rem;
+    line-height: 0.98;
+    gap: 2px;
     color: rgba(26, 22, 16, 0.88);
     text-shadow: 0 1px 3px rgba(255, 255, 255, 0.4);
   }
 
   .board-qr-box {
-    width: min(100%, 74px);
-    border-radius: 7px;
-    padding: 3px;
+    width: min(100%, 54px);
+    border-radius: 6px;
+    padding: 2px;
   }
 
   .wish-chip {

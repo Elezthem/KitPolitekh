@@ -145,12 +145,11 @@ function validateContactForm(payload) {
 }
 
 function validateWish(wish) {
-  const words = wish.split(/\s+/).filter(Boolean);
   if (wish.length < 2) {
     return "Побажання має бути не коротшим за 2 символи.";
   }
-  if (words.length > 255) {
-    return "Побажання має містити не більше 255 слів.";
+  if (wish.length > 25) {
+    return "Побажання має містити не більше 25 символів.";
   }
 
   const normalizedWish = wish.toLowerCase();

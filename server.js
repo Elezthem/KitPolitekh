@@ -192,7 +192,7 @@ function isValidTelegram(value) {
 }
 
 function isValidWish(value) {
-  return /^.{2,50}$/.test(value);
+  return /^.{2,25}$/.test(value);
 }
 
 function sanitizeBlockedWord(value) {
@@ -340,7 +340,7 @@ function handleSubmit(req, res) {
         name: sanitizeText(body.name, 30),
         phone: sanitizePhone(body.phone),
         telegram: sanitizeText(body.telegram, 33),
-        wish: sanitizeText(body.wish, 50),
+        wish: sanitizeText(body.wish, 25),
         createdAt: new Date().toISOString()
       };
 
@@ -365,7 +365,7 @@ function handleSubmit(req, res) {
       }
 
       if (!isValidWish(submission.wish)) {
-        sendJson(res, 400, { error: "Wish must be 2-50 characters." });
+        sendJson(res, 400, { error: "Wish must be 2-25 characters." });
         return;
       }
 
