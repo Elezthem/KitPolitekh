@@ -8,11 +8,9 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin";
 const WISH_RETENTION_MS = 10 * 60 * 60 * 1000;
-const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(__dirname, "data"));
-const DATA_FILE = path.join(DATA_DIR, "submissions.json");
-const BACKUP_DIR = path.join(DATA_DIR, "backups");
 const PUBLIC_DIR = path.join(__dirname, "public");
 const IMAGE_DIR = path.join(__dirname, "img");
+const DEFAULT_DATA_DIR = path.join(__dirname, "data");
 const DEFAULT_BLOCKED_WORDS = [
   "блять",
   "блядь",
@@ -34,8 +32,47 @@ const DEFAULT_BLOCKED_WORDS = [
 ];
 
 const clients = new Set();
+const resolvedDataPaths = resolveDataPaths();
+const DATA_DIR = resolvedDataPaths.dataDir;
+const DATA_FILE = resolvedDataPaths.dataFile;
+const BACKUP_DIR = resolvedDataPaths.backupDir;
 
 ensureDataFile();
+
+function resolveDataPaths() {
+  const requestedDir = path.resolve(process.env.DATA_DIR || DEFAULT_DATA_DIR);
+  const fallbackDir = path.resolve(DEFAULT_DATA_DIR);
+
+  const candidates = requestedDir === fallbackDir ? [requestedDir] : [requestedDir, fallbackDir];
+
+  for (const candidate of candidates) {
+    try {
+      fs.mkdirSync(candidate, { recursive: true });
+      fs.accessSync(candidate, fs.constants.R_OK | fs.constants.W_OK);
+      const backupDir = path.join(candidate, "backups");
+      fs.mkdirSync(backupDir, { recursive: true });
+      fs.accessSync(backupDir, fs.constants.R_OK | fs.constants.W_OK);
+
+      if (candidate !== requestedDir) {
+        console.warn(
+          `[storage] DATA_DIR "${requestedDir}" is not writable. Falling back to "${candidate}".`
+        );
+      }
+
+      return {
+        dataDir: candidate,
+        dataFile: path.join(candidate, "submissions.json"),
+        backupDir
+      };
+    } catch (error) {
+      if (candidate === fallbackDir) {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error("Unable to initialize a writable data directory.");
+}
 
 function ensureDataFile() {
   if (!fs.existsSync(DATA_DIR)) {
