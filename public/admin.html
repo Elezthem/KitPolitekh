@@ -12,6 +12,21 @@
         <h1>База учасників</h1>
         <p>Ця сторінка доступна лише розробникам через basic auth.</p>
         <div class="admin-stats" id="admin-stats"></div>
+
+        <form class="admin-settings" id="admin-settings">
+          <label for="blocked-words">Заборонені слова для побажань</label>
+          <textarea
+            id="blocked-words"
+            name="blockedWords"
+            rows="6"
+            placeholder="Кожне слово з нового рядка або через кому"
+          ></textarea>
+          <div class="admin-actions">
+            <button class="primary-button" type="submit">Зберегти фільтр</button>
+            <div class="status-line" id="admin-settings-status"></div>
+          </div>
+        </form>
+
         <div class="table-wrap">
           <table>
             <thead>
@@ -21,6 +36,7 @@
                 <th>Телефон</th>
                 <th>Telegram</th>
                 <th>Побажання</th>
+                <th>Дія</th>
               </tr>
             </thead>
             <tbody id="admin-table"></tbody>
@@ -30,4 +46,4 @@
     </main>
     <script src="/admin.js"></script>
   </body>
-  </html>
+</html>

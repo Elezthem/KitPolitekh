@@ -8,7 +8,6 @@ const wishCloud = document.querySelector("#wish-cloud");
 const qrInstagram = document.querySelector("#qr-instagram");
 const qrTiktok = document.querySelector("#qr-tiktok");
 const qrPlatform = document.querySelector("#qr-platform");
-const backButtons = [...document.querySelectorAll("[data-back]")];
 
 const RETENTION_MS = 10 * 60 * 60 * 1000;
 
@@ -18,13 +17,32 @@ const state = {
   telegram: ""
 };
 
+const blockedWordsState = {
+  words: []
+};
+
+const noteSlots = [
+  { left: "2%", top: "4%" },
+  { left: "9%", top: "18%" },
+  { left: "4%", top: "31%" },
+  { left: "11%", top: "46%" },
+  { left: "3%", top: "59%" },
+  { left: "10%", top: "74%" },
+  { left: "71%", top: "4%" },
+  { left: "78%", top: "18%" },
+  { left: "73%", top: "33%" },
+  { left: "80%", top: "47%" },
+  { left: "72%", top: "61%" },
+  { left: "79%", top: "75%" }
+];
+
 let clearWishTimer = 0;
 
 const order = ["intro", "contact", "wish", "showcase"];
 
 const socials = {
   instagram: "https://www.instagram.com/fkitmr.zpsu/",
-  tiktok: "https://www.tiktok.com/@fkitmr.zpsu"
+  tiktok: "https://www.tiktok.com/@fkitmr.zpsu/"
 };
 
 const validators = {
@@ -33,36 +51,37 @@ const validators = {
   telegram: /^@?[A-Za-z0-9_]{5,32}$/
 };
 
-function showScreen(name, options = {}) {
-  const { push = true } = options;
+function setActiveScreen(name) {
   screens.forEach((screen) => {
     screen.classList.toggle("is-active", screen.dataset.screen === name);
   });
-
-  if (push) {
-    const url = name === "intro" ? "/" : `/#${name}`;
-    window.history.pushState({ screen: name }, "", url);
-  }
 }
 
-function goBackScreen() {
-  const hash = window.location.hash.replace("#", "");
-  const current = order.includes(hash) ? hash : "intro";
-  const currentIndex = order.indexOf(current);
+function buildScreenUrl(name) {
+  return name === "intro" ? "/" : `/#${name}`;
+}
 
-  if (currentIndex > 0) {
-    window.history.back();
+function showScreen(name, options = {}) {
+  const { push = false } = options;
+  setActiveScreen(name);
+
+  if (push) {
+    window.history.pushState({ screen: name }, "", buildScreenUrl(name));
     return;
   }
 
-  showScreen("intro", { push: false });
-  window.history.replaceState({ screen: "intro" }, "", "/");
+  window.history.replaceState({ screen: name }, "", buildScreenUrl(name));
+}
+
+function replaceScreen(name) {
+  setActiveScreen(name);
+  window.history.replaceState({ screen: name }, "", buildScreenUrl(name));
 }
 
 function syncScreenFromLocation() {
-  const hash = window.location.hash.replace("#", "");
-  const target = order.includes(hash) ? hash : "intro";
-  showScreen(target, { push: false });
+  const currentScreen = window.history.state?.screen;
+  const target = order.includes(currentScreen) ? currentScreen : "intro";
+  replaceScreen(target);
 }
 
 function escapeHtml(text) {
@@ -108,17 +127,6 @@ function scheduleWishClear(expiresAt) {
   clearWishTimer = window.setTimeout(clearWishes, delay);
 }
 
-const cloudSlots = [
-  { left: "6%", top: "10%" },
-  { left: "19%", top: "26%" },
-  { left: "8%", top: "52%" },
-  { left: "19%", top: "73%" },
-  { left: "73%", top: "9%" },
-  { left: "82%", top: "28%" },
-  { left: "75%", top: "54%" },
-  { left: "84%", top: "74%" }
-];
-
 function normalizeTelegram(value) {
   return value.startsWith("@") ? value : `@${value}`;
 }
@@ -144,18 +152,48 @@ function validateWish(wish) {
   if (words.length > 255) {
     return "Побажання має містити не більше 255 слів.";
   }
+
+  const normalizedWish = wish.toLowerCase();
+  const blockedWord = blockedWordsState.words.find((word) => normalizedWish.includes(word));
+  if (blockedWord) {
+    return "Побажання містить заборонені слова.";
+  }
+
   return "";
 }
 
+async function loadBlockedWords() {
+  try {
+    const response = await fetch("/api/settings/blocked-words", { cache: "no-store" });
+    if (!response.ok) {
+      return;
+    }
+
+    const data = await response.json();
+    blockedWordsState.words = Array.isArray(data.blockedWords) ? data.blockedWords : [];
+  } catch {
+    blockedWordsState.words = [];
+  }
+}
+
 function renderWishCloud(entries, highlightNewest = false) {
-  const items = entries.slice(-8).reverse();
+  const items = entries.slice().reverse();
   wishCloud.innerHTML = items
     .map((entry, index) => {
-      const slot = cloudSlots[index % cloudSlots.length];
+      const slot = noteSlots[index % noteSlots.length];
+      const cycle = Math.floor(index / noteSlots.length);
+      const horizontalDrift = (index % 2 === 0 ? -1 : 1) * ((index * 7) % 10);
+      const verticalDrift = cycle * 18 + ((index * 11) % 8);
+      const angle = ((index * 5) % 10) - 5;
+
       return `
         <div
           class="wish-note${highlightNewest && index === 0 ? " wish-note--new" : ""}"
-          style="left:${slot.left};top:${slot.top};"
+          style="
+            left: calc(${slot.left} + ${horizontalDrift}px);
+            top: calc(${slot.top} + ${verticalDrift}px);
+            --note-rotate: ${angle}deg;
+          "
         >
           <strong>${escapeHtml(entry.name)}</strong>
           <span>${escapeHtml(entry.wish)}</span>
@@ -170,7 +208,7 @@ function getWishEntries() {
 }
 
 function showWishOnBoard(entry) {
-  const nextEntries = [entry, ...getWishEntries()].slice(0, 8);
+  const nextEntries = [entry, ...getWishEntries()];
   wishCloud.dataset.entries = JSON.stringify(nextEntries);
   renderWishCloud(nextEntries, true);
 
@@ -205,10 +243,6 @@ function bootstrapStream() {
 }
 
 nextButton?.addEventListener("click", () => showScreen("contact"));
-
-backButtons.forEach((button) => {
-  button.addEventListener("click", goBackScreen);
-});
 
 contactForm?.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -264,7 +298,7 @@ wishForm?.addEventListener("submit", async (event) => {
 
     statusLine.textContent = "Побажання відправлено!";
     wishForm.reset();
-    showScreen("showcase");
+    replaceScreen("showcase");
   } catch (error) {
     statusLine.textContent = error.message || "Не вдалося відправити побажання.";
   }
@@ -273,6 +307,7 @@ wishForm?.addEventListener("submit", async (event) => {
 renderQr(qrInstagram, socials.instagram);
 renderQr(qrTiktok, socials.tiktok);
 renderQr(qrPlatform, buildPlatformUrl());
+loadBlockedWords();
 bootstrapStream();
 
 window.addEventListener("popstate", syncScreenFromLocation);

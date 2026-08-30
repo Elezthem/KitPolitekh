@@ -8,10 +8,30 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin";
 const WISH_RETENTION_MS = 10 * 60 * 60 * 1000;
-const DATA_DIR = path.join(__dirname, "data");
+const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(__dirname, "data"));
 const DATA_FILE = path.join(DATA_DIR, "submissions.json");
+const BACKUP_DIR = path.join(DATA_DIR, "backups");
 const PUBLIC_DIR = path.join(__dirname, "public");
 const IMAGE_DIR = path.join(__dirname, "img");
+const DEFAULT_BLOCKED_WORDS = [
+  "блять",
+  "блядь",
+  "бля",
+  "сука",
+  "хуй",
+  "нахуй",
+  "пизда",
+  "пізда",
+  "пиздец",
+  "пиздець",
+  "єбать",
+  "ебать",
+  "йоб",
+  "ебл",
+  "fuck",
+  "shit",
+  "bitch"
+];
 
 const clients = new Set();
 
@@ -22,10 +42,23 @@ function ensureDataFile() {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
 
+  if (!fs.existsSync(BACKUP_DIR)) {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  }
+
   if (!fs.existsSync(DATA_FILE)) {
     fs.writeFileSync(
       DATA_FILE,
-      JSON.stringify({ submissions: [], updatedAt: new Date().toISOString() }, null, 2),
+      JSON.stringify(
+        {
+          submissions: [],
+          blockedWords: DEFAULT_BLOCKED_WORDS,
+          lastSubmissionAt: null,
+          updatedAt: new Date().toISOString()
+        },
+        null,
+        2
+      ),
       "utf8"
     );
   }
@@ -33,20 +66,47 @@ function ensureDataFile() {
 
 function readStore() {
   ensureDataFile();
-  return JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+  const parsed = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+  return normalizeStore(parsed);
 }
 
 function writeStore(store) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2), "utf8");
+  const nextStore = normalizeStore(store);
+  const payload = JSON.stringify(nextStore, null, 2);
+  const tempFile = `${DATA_FILE}.tmp`;
+
+  fs.writeFileSync(tempFile, payload, "utf8");
+  fs.renameSync(tempFile, DATA_FILE);
+  writeBackupSnapshot(payload);
+}
+
+function normalizeStore(store) {
+  const submissions = Array.isArray(store?.submissions) ? store.submissions : [];
+  const blockedWords = Array.isArray(store?.blockedWords)
+    ? store.blockedWords.map((word) => sanitizeBlockedWord(word)).filter(Boolean)
+    : [...DEFAULT_BLOCKED_WORDS];
+
+  return {
+    submissions,
+    blockedWords: [...new Set(blockedWords)],
+    lastSubmissionAt: store?.lastSubmissionAt || submissions.at(-1)?.createdAt || null,
+    updatedAt: store?.updatedAt || new Date().toISOString()
+  };
+}
+
+function writeBackupSnapshot(payload) {
+  const dateStamp = new Date().toISOString().slice(0, 10);
+  const backupFile = path.join(BACKUP_DIR, `submissions-${dateStamp}.json`);
+  fs.writeFileSync(backupFile, payload, "utf8");
 }
 
 function getWishExpiryMeta(store) {
-  const lastActivityAt = store.updatedAt || store.submissions.at(-1)?.createdAt || null;
-  if (!lastActivityAt) {
+  const lastSubmissionAt = store.lastSubmissionAt || store.submissions.at(-1)?.createdAt || null;
+  if (!lastSubmissionAt) {
     return { isExpired: false, expiresAt: null };
   }
 
-  const expiresAt = new Date(new Date(lastActivityAt).getTime() + WISH_RETENTION_MS).toISOString();
+  const expiresAt = new Date(new Date(lastSubmissionAt).getTime() + WISH_RETENTION_MS).toISOString();
   return {
     isExpired: Date.now() >= new Date(expiresAt).getTime(),
     expiresAt
@@ -58,7 +118,7 @@ function getVisibleWishes(store) {
   return {
     wishes: isExpired
       ? []
-      : store.submissions.slice(-8).map((item) => ({
+      : store.submissions.map((item) => ({
           id: item.id,
           name: item.name,
           wish: item.wish,
@@ -133,6 +193,32 @@ function isValidTelegram(value) {
 
 function isValidWish(value) {
   return /^.{2,50}$/.test(value);
+}
+
+function sanitizeBlockedWord(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .slice(0, 40);
+}
+
+function parseBlockedWordsInput(value) {
+  if (Array.isArray(value)) {
+    return [...new Set(value.map((item) => sanitizeBlockedWord(item)).filter(Boolean))];
+  }
+
+  return [...new Set(
+    String(value || "")
+      .split(/[\n,;]+/)
+      .map((item) => sanitizeBlockedWord(item))
+      .filter(Boolean)
+  )];
+}
+
+function containsBlockedWord(text, blockedWords) {
+  const normalizedText = String(text || "").toLowerCase();
+  return blockedWords.find((word) => word && normalizedText.includes(word)) || "";
 }
 
 function getMimeType(filePath) {
@@ -233,6 +319,19 @@ function pushWishEvent(submission) {
   }
 }
 
+function pushResetEvent(store) {
+  const visible = getVisibleWishes(store);
+  const payload = `data: ${JSON.stringify({
+    type: "bootstrap",
+    wishes: visible.wishes,
+    expiresAt: visible.expiresAt
+  })}\n\n`;
+
+  for (const client of clients) {
+    client.write(payload);
+  }
+}
+
 function handleSubmit(req, res) {
   parseBody(req)
     .then((body) => {
@@ -273,7 +372,14 @@ function handleSubmit(req, res) {
       submission.telegram = submission.telegram.replace(/^@?/, "@");
 
       const store = readStore();
+      const blockedWord = containsBlockedWord(submission.wish, store.blockedWords);
+      if (blockedWord) {
+        sendJson(res, 400, { error: "Wish contains forbidden words." });
+        return;
+      }
+
       store.submissions.push(submission);
+      store.lastSubmissionAt = submission.createdAt;
       store.updatedAt = new Date().toISOString();
       writeStore(store);
       pushWishEvent(submission);
@@ -307,6 +413,60 @@ function handleStream(res) {
   });
 }
 
+function handleAdminSettingsGet(req, res) {
+  if (!requireAuth(req, res)) {
+    return;
+  }
+
+  const store = readStore();
+  sendJson(res, 200, { blockedWords: store.blockedWords });
+}
+
+function handlePublicBlockedWords(req, res) {
+  const store = readStore();
+  sendJson(res, 200, { blockedWords: store.blockedWords });
+}
+
+function handleAdminSettingsUpdate(req, res) {
+  if (!requireAuth(req, res)) {
+    return;
+  }
+
+  parseBody(req)
+    .then((body) => {
+      const store = readStore();
+      store.blockedWords = parseBlockedWordsInput(body.blockedWords);
+      store.updatedAt = new Date().toISOString();
+      writeStore(store);
+      sendJson(res, 200, { ok: true, blockedWords: store.blockedWords });
+    })
+    .catch(() => {
+      sendJson(res, 400, { error: "Could not update settings." });
+    });
+}
+
+function handleAdminDeleteSubmission(req, res, submissionId) {
+  if (!requireAuth(req, res)) {
+    return;
+  }
+
+  const store = readStore();
+  const nextSubmissions = store.submissions.filter((entry) => entry.id !== submissionId);
+
+  if (nextSubmissions.length === store.submissions.length) {
+    sendJson(res, 404, { error: "Submission not found." });
+    return;
+  }
+
+  store.submissions = nextSubmissions;
+  store.lastSubmissionAt = nextSubmissions.at(-1)?.createdAt || null;
+  store.updatedAt = new Date().toISOString();
+  writeStore(store);
+  pushResetEvent(store);
+
+  sendJson(res, 200, { ok: true });
+}
+
 const server = http.createServer((req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host}`);
 
@@ -325,6 +485,27 @@ const server = http.createServer((req, res) => {
       return;
     }
     sendJson(res, 200, readStore());
+    return;
+  }
+
+  if (req.method === "GET" && requestUrl.pathname === "/api/admin/settings") {
+    handleAdminSettingsGet(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && requestUrl.pathname === "/api/admin/settings") {
+    handleAdminSettingsUpdate(req, res);
+    return;
+  }
+
+  if (req.method === "DELETE" && requestUrl.pathname.startsWith("/api/admin/submissions/")) {
+    const submissionId = decodeURIComponent(requestUrl.pathname.replace("/api/admin/submissions/", ""));
+    handleAdminDeleteSubmission(req, res, submissionId);
+    return;
+  }
+
+  if (req.method === "GET" && requestUrl.pathname === "/api/settings/blocked-words") {
+    handlePublicBlockedWords(req, res);
     return;
   }
 
