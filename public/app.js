@@ -7,13 +7,18 @@ const flyzone = document.querySelector("#wish-flyzone");
 const wishCloud = document.querySelector("#wish-cloud");
 const qrInstagram = document.querySelector("#qr-instagram");
 const qrTiktok = document.querySelector("#qr-tiktok");
+const qrPlatform = document.querySelector("#qr-platform");
 const backButtons = [...document.querySelectorAll("[data-back]")];
+
+const RETENTION_MS = 10 * 60 * 60 * 1000;
 
 const state = {
   phone: "",
   name: "",
   telegram: ""
 };
+
+let clearWishTimer = 0;
 
 const order = ["intro", "contact", "wish", "showcase"];
 
@@ -70,8 +75,37 @@ function escapeHtml(text) {
 }
 
 function renderQr(target, url) {
+  if (!target) {
+    return;
+  }
+
   const api = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&qzone=2&data=${encodeURIComponent(url)}`;
   target.innerHTML = `<img class="qr-image" src="${api}" alt="QR code" width="200" height="200" loading="eager" decoding="sync" />`;
+}
+
+function buildPlatformUrl() {
+  return `${window.location.origin}/#contact`;
+}
+
+function clearWishes() {
+  wishCloud.dataset.entries = JSON.stringify([]);
+  wishCloud.innerHTML = "";
+}
+
+function scheduleWishClear(expiresAt) {
+  window.clearTimeout(clearWishTimer);
+
+  if (!expiresAt) {
+    return;
+  }
+
+  const delay = new Date(expiresAt).getTime() - Date.now();
+  if (delay <= 0) {
+    clearWishes();
+    return;
+  }
+
+  clearWishTimer = window.setTimeout(clearWishes, delay);
 }
 
 const cloudSlots = [
@@ -154,14 +188,18 @@ function bootstrapStream() {
   const stream = new EventSource("/api/wishes-stream");
   stream.onmessage = (event) => {
     const data = JSON.parse(event.data);
-    if (data.type === "bootstrap" && data.wishes?.length) {
-      const nextEntries = data.wishes.slice(-8).reverse();
+
+    if (data.type === "bootstrap") {
+      const nextEntries = data.wishes || [];
       wishCloud.dataset.entries = JSON.stringify(nextEntries);
       renderWishCloud(nextEntries, false);
+      scheduleWishClear(data.expiresAt);
       return;
     }
+
     if (data.wish) {
       showWishOnBoard(data);
+      scheduleWishClear(data.expiresAt || new Date(Date.now() + RETENTION_MS).toISOString());
     }
   };
 }
@@ -234,6 +272,7 @@ wishForm?.addEventListener("submit", async (event) => {
 
 renderQr(qrInstagram, socials.instagram);
 renderQr(qrTiktok, socials.tiktok);
+renderQr(qrPlatform, buildPlatformUrl());
 bootstrapStream();
 
 window.addEventListener("popstate", syncScreenFromLocation);

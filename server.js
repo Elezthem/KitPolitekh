@@ -7,6 +7,7 @@ const { URL } = require("url");
 const PORT = process.env.PORT || 3000;
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin";
+const WISH_RETENTION_MS = 10 * 60 * 60 * 1000;
 const DATA_DIR = path.join(__dirname, "data");
 const DATA_FILE = path.join(DATA_DIR, "submissions.json");
 const PUBLIC_DIR = path.join(__dirname, "public");
@@ -37,6 +38,34 @@ function readStore() {
 
 function writeStore(store) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2), "utf8");
+}
+
+function getWishExpiryMeta(store) {
+  const lastActivityAt = store.updatedAt || store.submissions.at(-1)?.createdAt || null;
+  if (!lastActivityAt) {
+    return { isExpired: false, expiresAt: null };
+  }
+
+  const expiresAt = new Date(new Date(lastActivityAt).getTime() + WISH_RETENTION_MS).toISOString();
+  return {
+    isExpired: Date.now() >= new Date(expiresAt).getTime(),
+    expiresAt
+  };
+}
+
+function getVisibleWishes(store) {
+  const { isExpired, expiresAt } = getWishExpiryMeta(store);
+  return {
+    wishes: isExpired
+      ? []
+      : store.submissions.slice(-8).map((item) => ({
+          id: item.id,
+          name: item.name,
+          wish: item.wish,
+          createdAt: item.createdAt
+        })),
+    expiresAt: isExpired ? null : expiresAt
+  };
 }
 
 function sendJson(res, statusCode, payload) {
@@ -195,7 +224,8 @@ function pushWishEvent(submission) {
     id: submission.id,
     name: submission.name,
     wish: submission.wish,
-    createdAt: submission.createdAt
+    createdAt: submission.createdAt,
+    expiresAt: new Date(Date.now() + WISH_RETENTION_MS).toISOString()
   })}\n\n`;
 
   for (const client of clients) {
@@ -257,6 +287,7 @@ function handleSubmit(req, res) {
 
 function handleStream(res) {
   const store = readStore();
+  const visible = getVisibleWishes(store);
 
   res.writeHead(200, {
     "Content-Type": "text/event-stream; charset=utf-8",
@@ -266,12 +297,8 @@ function handleStream(res) {
 
   res.write(`data: ${JSON.stringify({
     type: "bootstrap",
-    wishes: store.submissions.slice(-8).map((item) => ({
-      id: item.id,
-      name: item.name,
-      wish: item.wish,
-      createdAt: item.createdAt
-    }))
+    wishes: visible.wishes,
+    expiresAt: visible.expiresAt
   })}\n\n`);
 
   clients.add(res);
