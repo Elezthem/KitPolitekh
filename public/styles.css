@@ -259,10 +259,6 @@ textarea:focus {
   transform: translateZ(0);
 }
 
-.board-qr-box .qr-image {
-  border-radius: 6px;
-}
-
 .cat-stage {
   position: relative;
   min-height: 80vh;
@@ -303,34 +299,6 @@ textarea:focus {
   height: auto;
   object-fit: contain;
   filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.18));
-}
-
-.wish-board {
-  position: absolute;
-  left: 50%;
-  bottom: 20.8%;
-  transform: translateX(-50%);
-  width: min(24vw, 244px);
-  min-height: 132px;
-  z-index: 4;
-  display: grid;
-  place-items: center;
-  padding: 4px 6px 6px;
-}
-
-.board-qr-box {
-  width: min(100%, 118px);
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  padding: 4px;
-  background: rgba(255, 255, 255, 0.94);
-  border-radius: 10px;
-  box-shadow: 0 8px 18px rgba(108, 53, 17, 0.22);
-}
-
-.board-qr-box--single {
-  padding: 5px;
 }
 
 .wish-flyzone {
@@ -549,19 +517,6 @@ thead {
     width: min(88vw, 460px);
   }
 
-  .wish-board {
-    bottom: 19.6%;
-    width: min(38vw, 156px);
-    min-height: 92px;
-    padding: 4px 5px 4px;
-  }
-
-  .board-qr-box {
-    width: min(100%, 58px);
-    border-radius: 6px;
-    padding: 2px;
-  }
-
   .wish-note {
     width: min(100%, 104px);
     max-width: 104px;
@@ -680,19 +635,6 @@ thead {
     width: min(100%, 420px);
   }
 
-  .wish-board {
-    bottom: 19.8%;
-    width: min(38vw, 148px);
-    min-height: 88px;
-    padding: 4px 4px 4px;
-  }
-
-  .board-qr-box {
-    width: min(100%, 54px);
-    border-radius: 6px;
-    padding: 2px;
-  }
-
   .wish-chip {
     top: 3%;
     max-width: min(76vw, 260px);
@@ -735,11 +677,6 @@ thead {
   textarea {
     font-size: 1.2rem;
     padding: 20px 22px;
-  }
-
-  .wish-board {
-    width: min(20vw, 280px);
-    min-height: 146px;
   }
 
   .wish-note {
@@ -813,16 +750,6 @@ thead {
 
   .cat-card {
     width: min(60vw, 1080px);
-  }
-
-  .wish-board {
-    width: min(16vw, 360px);
-    min-height: 188px;
-  }
-
-  .board-qr-box {
-    padding: 6px;
-    border-radius: 14px;
   }
 
   .wish-note {

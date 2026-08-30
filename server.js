@@ -299,7 +299,7 @@ function serveStatic(reqPath, res) {
 }
 
 function serveImage(reqPath, res) {
-  const imageName = reqPath.replace(/^\/img\//, "");
+  const imageName = decodeURIComponent(reqPath.replace(/^\/img\//, ""));
   const safeName = path.basename(imageName);
   const filePath = path.join(IMAGE_DIR, safeName);
 

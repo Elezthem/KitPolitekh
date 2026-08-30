@@ -7,7 +7,6 @@ const flyzone = document.querySelector("#wish-flyzone");
 const wishCloud = document.querySelector("#wish-cloud");
 const qrInstagram = document.querySelector("#qr-instagram");
 const qrTiktok = document.querySelector("#qr-tiktok");
-const qrPlatform = document.querySelector("#qr-platform");
 
 const RETENTION_MS = 10 * 60 * 60 * 1000;
 
@@ -106,10 +105,6 @@ function renderQr(target, url) {
 
   const api = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&qzone=2&data=${encodeURIComponent(url)}`;
   target.innerHTML = `<img class="qr-image" src="${api}" alt="QR code" width="200" height="200" loading="eager" decoding="sync" />`;
-}
-
-function buildPlatformUrl() {
-  return `${window.location.origin}/#contact`;
 }
 
 function clearWishes() {
@@ -361,7 +356,6 @@ wishForm?.addEventListener("submit", async (event) => {
 
 renderQr(qrInstagram, socials.instagram);
 renderQr(qrTiktok, socials.tiktok);
-renderQr(qrPlatform, buildPlatformUrl());
 loadBlockedWords();
 bootstrapStream();
 
