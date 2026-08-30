@@ -59,7 +59,6 @@ function setActiveScreen(name) {
   screens.forEach((screen) => {
     screen.classList.toggle("is-active", screen.dataset.screen === name);
   });
-  document.body.classList.toggle("showcase-locked", name === "showcase");
 }
 
 function buildScreenUrl(name) {

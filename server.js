@@ -181,6 +181,15 @@ function sendText(res, statusCode, text) {
   res.end(text);
 }
 
+function sendDownload(res, filename, content) {
+  res.writeHead(200, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
+    "Content-Disposition": `attachment; filename="${filename}"`
+  });
+  res.end(content);
+}
+
 function parseBody(req) {
   return new Promise((resolve, reject) => {
     let raw = "";
@@ -527,6 +536,17 @@ const server = http.createServer((req, res) => {
 
   if (req.method === "GET" && requestUrl.pathname === "/api/admin/settings") {
     handleAdminSettingsGet(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && requestUrl.pathname === "/api/admin/export") {
+    if (!requireAuth(req, res)) {
+      return;
+    }
+
+    const store = readStore();
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    sendDownload(res, `submissions-${dateStamp}.json`, JSON.stringify(store, null, 2));
     return;
   }
 

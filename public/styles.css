@@ -28,10 +28,6 @@ body {
   overflow-x: hidden;
 }
 
-body.showcase-locked {
-  overflow: hidden;
-}
-
 .app-shell {
   min-height: 100vh;
 }
@@ -170,6 +166,7 @@ textarea:focus {
   background:
     radial-gradient(circle at center, rgba(42, 182, 27, 0.12), transparent 30%),
     linear-gradient(180deg, #ffffff, #f5f8ff 72%, #f0f5ea);
+  overflow: hidden;
 }
 
 .showcase-grid {

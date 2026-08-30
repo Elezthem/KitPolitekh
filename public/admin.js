@@ -3,6 +3,7 @@ const table = document.querySelector("#admin-table");
 const settingsForm = document.querySelector("#admin-settings");
 const blockedWordsField = document.querySelector("#blocked-words");
 const settingsStatus = document.querySelector("#admin-settings-status");
+const exportButton = document.querySelector("#admin-export-button");
 
 function escapeHtml(text) {
   return String(text)
@@ -75,6 +76,14 @@ settingsForm?.addEventListener("submit", async (event) => {
   } catch (error) {
     settingsStatus.textContent = error.message || "Не вдалося зберегти фільтр.";
   }
+});
+
+exportButton?.addEventListener("click", () => {
+  settingsStatus.textContent = "Готуємо JSON...";
+  window.location.href = "/api/admin/export";
+  window.setTimeout(() => {
+    settingsStatus.textContent = "JSON завантажується.";
+  }, 250);
 });
 
 table?.addEventListener("click", async (event) => {
