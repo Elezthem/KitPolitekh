@@ -28,6 +28,36 @@ body {
   overflow-x: hidden;
 }
 
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(204, 129, 31, 0.72) rgba(255, 247, 237, 0.96);
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 248, 255, 0.96));
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(255, 184, 77, 0.95), rgba(204, 129, 31, 0.92));
+  border-radius: 999px;
+  border: 2px solid rgba(255, 247, 237, 0.95);
+  box-shadow: 0 4px 10px rgba(204, 129, 31, 0.18);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(255, 174, 56, 0.98), rgba(189, 113, 18, 0.96));
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 .app-shell {
   min-height: 100vh;
 }
