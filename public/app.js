@@ -36,6 +36,11 @@ const noteSlots = [
   { left: "79%", top: "75%" }
 ];
 
+const NOTE_WIDTH = 180;
+const NOTE_HEIGHT = 92;
+const NOTE_GAP_X = 18;
+const NOTE_GAP_Y = 14;
+
 let clearWishTimer = 0;
 
 const order = ["intro", "contact", "wish", "showcase"];
@@ -55,6 +60,7 @@ function setActiveScreen(name) {
   screens.forEach((screen) => {
     screen.classList.toggle("is-active", screen.dataset.screen === name);
   });
+  document.body.classList.toggle("showcase-locked", name === "showcase");
 }
 
 function buildScreenUrl(name) {
@@ -175,23 +181,73 @@ async function loadBlockedWords() {
   }
 }
 
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function buildNoteLayouts(items) {
+  const layouts = [];
+  const cloudWidth = wishCloud?.clientWidth || 1200;
+  const cloudHeight = wishCloud?.clientHeight || 900;
+  const maxLeft = Math.max(0, cloudWidth - NOTE_WIDTH);
+  const maxTop = Math.max(0, cloudHeight - NOTE_HEIGHT);
+
+  items.forEach((_, index) => {
+    const slot = noteSlots[index % noteSlots.length];
+    const cycle = Math.floor(index / noteSlots.length);
+    const baseLeft = (parseFloat(slot.left) / 100) * cloudWidth;
+    const baseTop = (parseFloat(slot.top) / 100) * cloudHeight;
+    let left = clamp(
+      baseLeft + ((index % 2 === 0 ? -1 : 1) * ((index * 7) % 10)),
+      0,
+      maxLeft
+    );
+    let top = clamp(baseTop + cycle * 26 + ((index * 11) % 8), 0, maxTop);
+    let tries = 0;
+
+    while (tries < 24) {
+      const overlaps = layouts.some((placed) => {
+        const horizontalOverlap = Math.abs(left - placed.left) < NOTE_WIDTH - NOTE_GAP_X;
+        const verticalOverlap = Math.abs(top - placed.top) < NOTE_HEIGHT - NOTE_GAP_Y;
+        return horizontalOverlap && verticalOverlap;
+      });
+
+      if (!overlaps) {
+        break;
+      }
+
+      top = clamp(top + NOTE_HEIGHT * 0.55, 0, maxTop);
+      if (top >= maxTop - 4) {
+        top = clamp(baseTop + (tries % 4) * 12, 0, maxTop);
+        left = clamp(left + (index % 2 === 0 ? -1 : 1) * 16, 0, maxLeft);
+      }
+      tries += 1;
+    }
+
+    layouts.push({
+      left,
+      top,
+      angle: ((index * 5) % 10) - 5
+    });
+  });
+
+  return layouts;
+}
+
 function renderWishCloud(entries, highlightNewest = false) {
   const items = entries.slice().reverse();
+  const layouts = buildNoteLayouts(items);
   wishCloud.innerHTML = items
     .map((entry, index) => {
-      const slot = noteSlots[index % noteSlots.length];
-      const cycle = Math.floor(index / noteSlots.length);
-      const horizontalDrift = (index % 2 === 0 ? -1 : 1) * ((index * 7) % 10);
-      const verticalDrift = cycle * 18 + ((index * 11) % 8);
-      const angle = ((index * 5) % 10) - 5;
+      const layout = layouts[index];
 
       return `
         <div
           class="wish-note${highlightNewest && index === 0 ? " wish-note--new" : ""}"
           style="
-            left: calc(${slot.left} + ${horizontalDrift}px);
-            top: calc(${slot.top} + ${verticalDrift}px);
-            --note-rotate: ${angle}deg;
+            left: ${layout.left}px;
+            top: ${layout.top}px;
+            --note-rotate: ${layout.angle}deg;
           "
         >
           <strong>${escapeHtml(entry.name)}</strong>
