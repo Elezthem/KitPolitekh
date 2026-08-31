@@ -7,6 +7,8 @@ const { URL } = require("url");
 const PORT = process.env.PORT || 3000;
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin";
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "";
 const WISH_RETENTION_MS = 10 * 60 * 60 * 1000;
 const PUBLIC_DIR = path.join(__dirname, "public");
 const IMAGE_DIR = path.join(__dirname, "img");
@@ -36,6 +38,7 @@ const resolvedDataPaths = resolveDataPaths();
 const DATA_DIR = resolvedDataPaths.dataDir;
 const DATA_FILE = resolvedDataPaths.dataFile;
 const BACKUP_DIR = resolvedDataPaths.backupDir;
+const LATEST_BACKUP_FILE = path.join(BACKUP_DIR, "submissions-latest.json");
 
 ensureDataFile();
 
@@ -84,30 +87,33 @@ function ensureDataFile() {
   }
 
   if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(
-      DATA_FILE,
-      JSON.stringify(
-        {
-          submissions: [],
-          blockedWords: DEFAULT_BLOCKED_WORDS,
-          lastSubmissionAt: null,
-          updatedAt: new Date().toISOString()
-        },
-        null,
-        2
-      ),
-      "utf8"
-    );
+    if (restoreDataFileFromBackup()) {
+      return;
+    }
+
+    const initialPayload = JSON.stringify(createEmptyStore(), null, 2);
+    fs.writeFileSync(DATA_FILE, initialPayload, "utf8");
+    writeBackupSnapshot(initialPayload);
   }
 }
 
 function readStore() {
   ensureDataFile();
-  const parsed = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
-  return normalizeStore(parsed);
+
+  try {
+    const parsed = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+    return normalizeStore(parsed);
+  } catch (error) {
+    if (restoreDataFileFromBackup()) {
+      const parsed = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+      return normalizeStore(parsed);
+    }
+
+    throw error;
+  }
 }
 
-function writeStore(store) {
+function writeStore(store, options = {}) {
   const nextStore = normalizeStore(store);
   const payload = JSON.stringify(nextStore, null, 2);
   const tempFile = `${DATA_FILE}.tmp`;
@@ -115,6 +121,10 @@ function writeStore(store) {
   fs.writeFileSync(tempFile, payload, "utf8");
   fs.renameSync(tempFile, DATA_FILE);
   writeBackupSnapshot(payload);
+
+  if (options.telegramReason) {
+    queueTelegramBackup(nextStore, options.telegramReason);
+  }
 }
 
 function normalizeStore(store) {
@@ -126,6 +136,10 @@ function normalizeStore(store) {
   return {
     submissions,
     blockedWords: [...new Set(blockedWords)],
+    currentSessionId: store?.currentSessionId || submissions[0]?.sessionId || null,
+    sessionStartedAt: store?.sessionStartedAt || submissions[0]?.createdAt || null,
+    sessionExportedAt: store?.sessionExportedAt || null,
+    sessionAutoArchivedAt: store?.sessionAutoArchivedAt || null,
     lastSubmissionAt: store?.lastSubmissionAt || submissions.at(-1)?.createdAt || null,
     updatedAt: store?.updatedAt || new Date().toISOString()
   };
@@ -133,12 +147,221 @@ function normalizeStore(store) {
 
 function writeBackupSnapshot(payload) {
   const dateStamp = new Date().toISOString().slice(0, 10);
+  const timestampStamp = formatSessionStamp(new Date().toISOString());
   const backupFile = path.join(BACKUP_DIR, `submissions-${dateStamp}.json`);
+  const historyBackupFile = path.join(BACKUP_DIR, `submissions-${timestampStamp}.json`);
   fs.writeFileSync(backupFile, payload, "utf8");
+  fs.writeFileSync(LATEST_BACKUP_FILE, payload, "utf8");
+  fs.writeFileSync(historyBackupFile, payload, "utf8");
+}
+
+function canSendTelegramBackup() {
+  return Boolean(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID);
+}
+
+async function sendTelegramBackup(store, reason) {
+  if (!canSendTelegramBackup()) {
+    return;
+  }
+
+  const exportedAt = new Date().toISOString();
+  const filename = `participants-backup-${formatSessionStamp(exportedAt)}.json`;
+  const caption = [
+    `Backup reason: ${reason}`,
+    `Exported at: ${exportedAt}`,
+    `Submissions: ${store.submissions.length}`
+  ].join("\n");
+
+  const formData = new FormData();
+  formData.append("chat_id", TELEGRAM_CHAT_ID);
+  formData.append("caption", caption);
+  formData.append(
+    "document",
+    new Blob([JSON.stringify(store, null, 2)], { type: "application/json" }),
+    filename
+  );
+
+  const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, {
+    method: "POST",
+    body: formData
+  });
+
+  if (!response.ok) {
+    const responseText = await response.text();
+    throw new Error(`Telegram backup failed: ${response.status} ${responseText}`);
+  }
+}
+
+function queueTelegramBackup(store, reason) {
+  sendTelegramBackup(store, reason).catch((error) => {
+    console.error("[telegram-backup]", error.message);
+  });
+}
+
+function createEmptyStore() {
+  return {
+    submissions: [],
+    blockedWords: DEFAULT_BLOCKED_WORDS,
+    currentSessionId: null,
+    sessionStartedAt: null,
+    sessionExportedAt: null,
+    sessionAutoArchivedAt: null,
+    lastSubmissionAt: null,
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function getBackupCandidates() {
+  const backupFiles = fs
+    .readdirSync(BACKUP_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.startsWith("submissions-") && entry.name.endsWith(".json"))
+    .map((entry) => ({
+      filePath: path.join(BACKUP_DIR, entry.name),
+      mtimeMs: fs.statSync(path.join(BACKUP_DIR, entry.name)).mtimeMs
+    }))
+    .sort((a, b) => b.mtimeMs - a.mtimeMs);
+
+  const ordered = [];
+
+  if (fs.existsSync(LATEST_BACKUP_FILE)) {
+    ordered.push(LATEST_BACKUP_FILE);
+  }
+
+  for (const entry of backupFiles) {
+    if (!ordered.includes(entry.filePath)) {
+      ordered.push(entry.filePath);
+    }
+  }
+
+  return ordered;
+}
+
+function restoreDataFileFromBackup() {
+  for (const backupFile of getBackupCandidates()) {
+    try {
+      const raw = fs.readFileSync(backupFile, "utf8");
+      const parsed = JSON.parse(raw);
+      const normalized = normalizeStore(parsed);
+      fs.writeFileSync(DATA_FILE, JSON.stringify(normalized, null, 2), "utf8");
+      return true;
+    } catch (error) {
+      continue;
+    }
+  }
+
+  return false;
+}
+
+function formatSessionStamp(timestamp) {
+  return String(timestamp || "")
+    .replace(/[:.]/g, "-")
+    .replace("T", "_")
+    .replace("Z", "");
+}
+
+function getSessionMeta(store) {
+  const sessionStartedAt = store.sessionStartedAt || null;
+  if (!sessionStartedAt) {
+    return {
+      startedAt: null,
+      endsAt: null,
+      isExpired: false,
+      hasSubmissions: false,
+      exportDownloadedAt: store.sessionExportedAt || null,
+      autoArchivedAt: store.sessionAutoArchivedAt || null
+    };
+  }
+
+  const endsAt = new Date(new Date(sessionStartedAt).getTime() + WISH_RETENTION_MS).toISOString();
+  return {
+    startedAt: sessionStartedAt,
+    endsAt,
+    isExpired: Date.now() >= new Date(endsAt).getTime(),
+    hasSubmissions: store.submissions.length > 0,
+    exportDownloadedAt: store.sessionExportedAt || null,
+    autoArchivedAt: store.sessionAutoArchivedAt || null
+  };
+}
+
+function getCurrentSessionSubmissions(store) {
+  if (!store.currentSessionId) {
+    return store.sessionStartedAt ? store.submissions : [];
+  }
+
+  return store.submissions.filter((submission) => submission.sessionId === store.currentSessionId);
+}
+
+function buildSessionExportPayload(store) {
+  const session = getSessionMeta(store);
+  return {
+    sessionId: store.currentSessionId || null,
+    sessionStartedAt: session.startedAt,
+    sessionEndsAt: session.endsAt,
+    exportedAt: new Date().toISOString(),
+    submissions: getCurrentSessionSubmissions(store)
+  };
+}
+
+function buildSessionFilename(store) {
+  const session = getSessionMeta(store);
+  const startedStamp = formatSessionStamp(session.startedAt || new Date().toISOString());
+  const endsStamp = formatSessionStamp(session.endsAt || new Date().toISOString());
+  return `session-submissions-${startedStamp}-to-${endsStamp}.json`;
+}
+
+function writeSessionArchiveFile(store) {
+  if (!getCurrentSessionSubmissions(store).length) {
+    return null;
+  }
+
+  const filename = buildSessionFilename(store);
+  const filePath = path.join(BACKUP_DIR, filename);
+  fs.writeFileSync(filePath, JSON.stringify(buildSessionExportPayload(store), null, 2), "utf8");
+  return filename;
+}
+
+function maybeAutoArchiveExpiredSession(store) {
+  const session = getSessionMeta(store);
+  if (!session.startedAt || !session.hasSubmissions || !session.isExpired || session.exportDownloadedAt) {
+    return store;
+  }
+
+  if (session.autoArchivedAt) {
+    return store;
+  }
+
+  writeSessionArchiveFile(store);
+  store.sessionAutoArchivedAt = new Date().toISOString();
+  store.updatedAt = new Date().toISOString();
+  writeStore(store, { telegramReason: "session auto archive" });
+  return store;
+}
+
+function resetSessionTracking(store, startedAt) {
+  store.currentSessionId = startedAt ? crypto.randomUUID() : null;
+  store.sessionStartedAt = startedAt || null;
+  store.sessionExportedAt = null;
+  store.sessionAutoArchivedAt = null;
+}
+
+function rotateExpiredSessionIfNeeded(store) {
+  const session = getSessionMeta(store);
+  if (!session.startedAt || !session.isExpired) {
+    return store;
+  }
+
+  const beforeArchiveFlag = store.sessionAutoArchivedAt;
+  maybeAutoArchiveExpiredSession(store);
+  if (store.sessionAutoArchivedAt !== beforeArchiveFlag) {
+    pushResetEvent(store);
+  }
+  return store;
 }
 
 function getWishExpiryMeta(store) {
-  const lastSubmissionAt = store.lastSubmissionAt || store.submissions.at(-1)?.createdAt || null;
+  const currentSessionSubmissions = getCurrentSessionSubmissions(store);
+  const lastSubmissionAt =
+    currentSessionSubmissions.at(-1)?.createdAt || store.lastSubmissionAt || null;
   if (!lastSubmissionAt) {
     return { isExpired: false, expiresAt: null };
   }
@@ -151,11 +374,12 @@ function getWishExpiryMeta(store) {
 }
 
 function getVisibleWishes(store) {
+  store = rotateExpiredSessionIfNeeded(store);
   const { isExpired, expiresAt } = getWishExpiryMeta(store);
   return {
     wishes: isExpired
       ? []
-      : store.submissions.map((item) => ({
+      : getCurrentSessionSubmissions(store).map((item) => ({
           id: item.id,
           name: item.name,
           wish: item.wish,
@@ -418,16 +642,21 @@ function handleSubmit(req, res) {
       submission.telegram = submission.telegram.replace(/^@?/, "@");
 
       const store = readStore();
+      rotateExpiredSessionIfNeeded(store);
+      if (!store.sessionStartedAt || getSessionMeta(store).isExpired) {
+        resetSessionTracking(store, submission.createdAt);
+      }
       const blockedWord = containsBlockedWord(submission.wish, store.blockedWords);
       if (blockedWord) {
         sendJson(res, 400, { error: "Wish contains forbidden words." });
         return;
       }
 
+      submission.sessionId = store.currentSessionId;
       store.submissions.push(submission);
       store.lastSubmissionAt = submission.createdAt;
       store.updatedAt = new Date().toISOString();
-      writeStore(store);
+      writeStore(store, { telegramReason: "new participant submission" });
       pushWishEvent(submission);
 
       sendJson(res, 201, { ok: true, submissionId: submission.id });
@@ -464,13 +693,25 @@ function handleAdminSettingsGet(req, res) {
     return;
   }
 
-  const store = readStore();
+  const store = maybeAutoArchiveExpiredSession(readStore());
   sendJson(res, 200, { blockedWords: store.blockedWords });
 }
 
 function handlePublicBlockedWords(req, res) {
-  const store = readStore();
+  const store = maybeAutoArchiveExpiredSession(readStore());
   sendJson(res, 200, { blockedWords: store.blockedWords });
+}
+
+function handleAdminSessionGet(req, res) {
+  if (!requireAuth(req, res)) {
+    return;
+  }
+
+  const store = maybeAutoArchiveExpiredSession(readStore());
+  sendJson(res, 200, {
+    session: getSessionMeta(store),
+    submissionsCount: getCurrentSessionSubmissions(store).length
+  });
 }
 
 function handleAdminSettingsUpdate(req, res) {
@@ -505,9 +746,12 @@ function handleAdminDeleteSubmission(req, res, submissionId) {
   }
 
   store.submissions = nextSubmissions;
+  if (!nextSubmissions.length) {
+    resetSessionTracking(store, null);
+  }
   store.lastSubmissionAt = nextSubmissions.at(-1)?.createdAt || null;
   store.updatedAt = new Date().toISOString();
-  writeStore(store);
+  writeStore(store, { telegramReason: "participant deleted from admin" });
   pushResetEvent(store);
 
   sendJson(res, 200, { ok: true });
@@ -530,7 +774,12 @@ const server = http.createServer((req, res) => {
     if (!requireAuth(req, res)) {
       return;
     }
-    sendJson(res, 200, readStore());
+    sendJson(res, 200, maybeAutoArchiveExpiredSession(readStore()));
+    return;
+  }
+
+  if (req.method === "GET" && requestUrl.pathname === "/api/admin/session") {
+    handleAdminSessionGet(req, res);
     return;
   }
 
@@ -544,9 +793,12 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    const store = readStore();
-    const dateStamp = new Date().toISOString().slice(0, 10);
-    sendDownload(res, `submissions-${dateStamp}.json`, JSON.stringify(store, null, 2));
+    const store = maybeAutoArchiveExpiredSession(readStore());
+    const exportPayload = JSON.stringify(buildSessionExportPayload(store), null, 2);
+    store.sessionExportedAt = new Date().toISOString();
+    store.updatedAt = new Date().toISOString();
+    writeStore(store);
+    sendDownload(res, buildSessionFilename(store), exportPayload);
     return;
   }
 

@@ -420,6 +420,25 @@ textarea:focus {
   font-weight: 700;
 }
 
+.admin-session {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 20px;
+  padding: 18px 20px;
+  border: 1px solid rgba(31, 41, 51, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.admin-session strong {
+  font-size: 1rem;
+}
+
+.admin-session span {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 .admin-settings {
   display: grid;
   gap: 12px;

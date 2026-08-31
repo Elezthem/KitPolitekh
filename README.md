@@ -23,6 +23,8 @@
 
 - основний файл: `data/submissions.json`
 - резервні копії: `data/backups/`
+- останній гарантований бекап: `data/backups/submissions-latest.json`
+- історія бекапів на кожне збереження: `data/backups/submissions-YYYY-MM-DDTHH-mm-ss-sss.json`
 - якщо задана змінна середовища `DATA_DIR`, дані будуть зберігатися там
 
 ## Deploy на Render
@@ -36,6 +38,8 @@
    - `ADMIN_USER`
    - `ADMIN_PASSWORD`
    - `DATA_DIR=/var/data/kitsite-politekh`
+   - `TELEGRAM_BOT_TOKEN`
+   - `TELEGRAM_CHAT_ID`
 5. Якщо хочете, щоб дані не зникали після перезапусків і деплоїв, підключіть persistent disk і змонтуйте його в `/var/data`.
 6. Дочекайтеся деплою та відкрийте URL, який видасть Render.
 
@@ -49,7 +53,22 @@ Health check: `/healthz`
 
 - можна вказати окрему папку через `DATA_DIR`
 - запис у файл відбувається атомарно через тимчасовий файл і `rename`
-- при кожному оновленні створюється резервна копія
+- при кожному оновленні створюється денний бекап, `submissions-latest.json` і timestamp-бекап
+- якщо `submissions.json` зникне або пошкодиться, сервер спробує автоматично відновити його з бекапу
+- якщо задані `TELEGRAM_BOT_TOKEN` і `TELEGRAM_CHAT_ID`, сервер автоматично надсилає JSON-бекап бази в Telegram
+
+## Telegram backup
+
+1. Створіть бота через `@BotFather` і отримайте token.
+2. Додайте бота в свій чат або відкрийте діалог із ботом.
+3. Дізнайтесь `chat_id`.
+4. Запишіть `TELEGRAM_BOT_TOKEN` і `TELEGRAM_CHAT_ID` у Render environment variables.
+
+Після цього сервер буде надсилати бекап у Telegram:
+
+- після нової заявки учасника
+- після видалення учасника з адмінки
+- після автоархівації завершеної 10-годинної сесії
 
 ## Адмінка
 
